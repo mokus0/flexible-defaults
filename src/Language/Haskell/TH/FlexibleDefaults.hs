@@ -10,6 +10,8 @@ module Language.Haskell.TH.FlexibleDefaults
     , score
     , cost
     , dependsOn
+    , inline
+    , noinline
     
     , withDefaults
     , implementDefaults

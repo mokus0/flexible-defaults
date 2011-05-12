@@ -67,23 +67,27 @@ function f (Function x) = do
 requireFunction :: String -> Defaults s ()
 requireFunction f = addImplSpecs f []
 
-newtype Implementation s a = Implementation (State (Maybe s, S.Set String) a)
+newtype Implementation s a = Implementation (State (Maybe s, S.Set String, Maybe InlineSpec) a)
     deriving (Functor, Applicative, Monad)
 
 -- |Describe a default implementation of the current function
 implementation :: Implementation s (Q [Dec]) -> Function s ()
-implementation (Implementation x) = case runState x (Nothing, S.empty) of
-    (dec, (s, deps)) -> Function $ do
-                fName <- ask
-                lift (addImplSpec fName (ImplSpec s deps dec))
+implementation (Implementation x) = case runState x (Nothing, S.empty, Nothing) of
+    (dec, (s, deps, inl)) -> Function $ do
+        fName <- ask
+        lift (addImplSpec fName (ImplSpec s deps (applyInline fName inl dec)))
+
+applyInline :: String -> Maybe InlineSpec -> Q [Dec] -> Q [Dec]
+applyInline _ Nothing       = id
+applyInline n (Just inl)    = fmap (PragmaD (InlineP (mkName n) inl) :)
 
 -- |Specify the score associated with the current implementation.  Only one 
 -- invocation of either 'score' or 'cost' may be used per implementation.
 score :: s -> Implementation s ()
 score s = Implementation $ do
-    (oldS, deps) <- get
+    (oldS, deps, inl) <- get
     case oldS of
-        Nothing -> put (Just s, deps)
+        Nothing -> put (Just s, deps, inl)
         Just _  -> fail "score: score was already set"
 
 -- |Specify the cost (negated score) associated with the current implementation.
@@ -97,5 +101,16 @@ cost = score . negate
 -- function, then a dependency need not be declared on that function.
 dependsOn :: String -> Implementation s ()
 dependsOn dep = Implementation $ do
-    (s, deps) <- get
-    put (s, S.insert dep deps)
+    (s, deps, inl) <- get
+    put (s, S.insert dep deps, inl)
+
+setInline :: InlineSpec -> Implementation s ()
+setInline inl = Implementation $ do
+    (s, deps, _) <- get
+    put (s, deps, Just inl)
+
+inline :: Implementation s ()
+inline = setInline (InlineSpec True False Nothing)
+
+noinline :: Implementation s ()
+noinline = setInline (InlineSpec False False Nothing)
