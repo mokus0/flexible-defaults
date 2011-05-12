@@ -11,8 +11,8 @@ import Data.Monoid
 import qualified Data.Map as M
 import qualified Data.Set as S
 
--- A very silly example.  For a real-world example, see the random-source package.
--- TODO: link or copy that example here.
+-- A very silly example.  For a real-world example, see the random-source package:
+-- https://github.com/mokus0/random-fu/blob/master/random-source/src/Data/Random/Internal/TH.hs
 class DefaultsTest a where
     foo :: a -> String
     foo = error "foo not implemented"
