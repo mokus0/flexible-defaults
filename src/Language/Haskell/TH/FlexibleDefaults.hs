@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -- |A code-generation system for complex typeclass default-implementation configurations.
 module Language.Haskell.TH.FlexibleDefaults
     ( Defaults
@@ -41,7 +42,9 @@ matchedNames (AsP n p)          = n : matchedNames p
 matchedNames (RecP _ fs)        = concatMap (matchedNames . snd) fs
 matchedNames (ListP ps)         = concatMap matchedNames ps
 matchedNames (SigP p _)         = matchedNames p
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 700
 matchedNames (ViewP _ p)        = matchedNames p
+#endif
 matchedNames _                  = []
 
 deleteKeys :: Ord k => S.Set k -> M.Map k v -> M.Map k v
