@@ -1,8 +1,7 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, CPP #-}
 module Language.Haskell.TH.FlexibleDefaults.DSL where
 
 import Control.Applicative
-import Control.Monad.Trans.Class
 import Control.Monad.Trans.Reader
 import Control.Monad.Trans.State
 import Control.Monad.Trans.Writer
@@ -67,6 +66,10 @@ function f (Function x) = do
 requireFunction :: String -> Defaults s ()
 requireFunction f = addImplSpecs f []
 
+#if !defined(__GLASGOW_HASKELL__) || __GLASGOW_HASKELL__ < 612
+type InlineSpec = ()
+#endif
+
 newtype Implementation s a = Implementation (State (Maybe s, S.Set String, Maybe InlineSpec) a)
     deriving (Functor, Applicative, Monad)
 
@@ -75,11 +78,16 @@ implementation :: Implementation s (Q [Dec]) -> Function s ()
 implementation (Implementation x) = case runState x (Nothing, S.empty, Nothing) of
     (dec, (s, deps, inl)) -> Function $ do
         fName <- ask
-        lift (addImplSpec fName (ImplSpec s deps (applyInline fName inl dec)))
+        ReaderT (const (addImplSpec fName (ImplSpec s deps (applyInline fName inl dec))))
 
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 612
 applyInline :: String -> Maybe InlineSpec -> Q [Dec] -> Q [Dec]
 applyInline _ Nothing       = id
 applyInline n (Just inl)    = fmap (PragmaD (InlineP (mkName n) inl) :)
+#else
+applyInline :: String -> Maybe InlineSpec -> Q [Dec] -> Q [Dec]
+applyInline _ _ = id
+#endif
 
 -- |Specify the score associated with the current implementation.  Only one 
 -- invocation of either 'score' or 'cost' may be used per implementation.
@@ -109,8 +117,11 @@ setInline inl = Implementation $ do
     (s, deps, _) <- get
     put (s, deps, Just inl)
 
-inline :: Implementation s ()
+inline, noinline :: Implementation s ()
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 612
 inline = setInline (InlineSpec True False Nothing)
-
-noinline :: Implementation s ()
 noinline = setInline (InlineSpec False False Nothing)
+#else
+inline = return ()
+noinline = return ()
+#endif

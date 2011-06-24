@@ -37,7 +37,9 @@ matchedNames (VarP n)           = [n]
 matchedNames (TupP ps)          = concatMap matchedNames ps
 matchedNames (InfixP p1 _ p2)   = matchedNames p1 ++ matchedNames p2
 matchedNames (TildeP p)         = matchedNames p
+#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 612
 matchedNames (BangP p)          = matchedNames p
+#endif
 matchedNames (AsP n p)          = n : matchedNames p
 matchedNames (RecP _ fs)        = concatMap (matchedNames . snd) fs
 matchedNames (ListP ps)         = concatMap matchedNames ps
