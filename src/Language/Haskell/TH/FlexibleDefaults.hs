@@ -1,5 +1,11 @@
 {-# LANGUAGE CPP #-}
--- |A code-generation system for complex typeclass default-implementation configurations.
+-- |A code-generation system for complex typeclass default-implementation
+-- configurations.  There are usage examples in this package's source 
+-- distribution[1] and in the random-source package[2].
+-- 
+-- 1. <https://github.com/mokus0/flexible-defaults/tree/master/examples>
+--
+-- 2. <https://github.com/mokus0/random-fu/blob/master/random-source/src/Data/Random/Internal/TH.hs>
 module Language.Haskell.TH.FlexibleDefaults
     ( Defaults
     , scoreBy

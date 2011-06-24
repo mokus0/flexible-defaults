@@ -25,6 +25,8 @@ instance Monoid (Impls s) where
     mempty = Impls mempty
     mappend (Impls x) (Impls y) = Impls (M.unionWith mappend x y)
     
+-- |A description of a system of 'Function's and default 'Implementation's 
+-- which can be used to complete a partial implementation of some type class.
 newtype Defaults s a = Defaults { unDefaults :: Writer (Impls s) a }
     deriving (Functor, Applicative, Monad)
 
@@ -52,6 +54,8 @@ toProblem
 scoreBy :: (a -> b) -> Defaults a t -> Defaults b t
 scoreBy f = Defaults . mapWriterT (fmap (fmap (fmap f))) . unDefaults
 
+-- |A representation of a function for which one or more default
+-- 'Implementation's exist.  Defined using the 'function' function.
 newtype Function s a = Function (ReaderT String (Defaults s) a)
     deriving (Functor, Applicative, Monad)
 
@@ -70,6 +74,8 @@ requireFunction f = addImplSpecs f []
 type InlineSpec = ()
 #endif
 
+-- |A representation of a single possible implementation of a 'Function'.  Defined
+-- using the 'implementation' function.
 newtype Implementation s a = Implementation (State (Maybe s, S.Set String, Maybe InlineSpec) a)
     deriving (Functor, Applicative, Monad)
 
@@ -117,7 +123,16 @@ setInline inl = Implementation $ do
     (s, deps, _) <- get
     put (s, deps, Just inl)
 
-inline, noinline :: Implementation s ()
+-- |Specify that an 'Implementation' should be annotated with an INLINE pragma.
+-- Under GHC versions earlier than 6.12 this is a no-op, because those Template
+-- Haskell implementations do not support pragmas.
+inline :: Implementation s ()
+
+-- |Specify that an 'Implementation' should be annotated with a NOINLINE pragma.
+-- Under GHC versions earlier than 6.12 this is a no-op, because those Template
+-- Haskell implementations do not support pragmas.
+noinline :: Implementation s ()
+
 #if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 612
 inline = setInline (InlineSpec True False Nothing)
 noinline = setInline (InlineSpec False False Nothing)
