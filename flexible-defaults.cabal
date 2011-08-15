@@ -1,5 +1,5 @@
 name:                   flexible-defaults
-version:                0.0.0.1
+version:                0.0.0.2
 stability:              experimental
 
 cabal-version:          >= 1.6
@@ -16,7 +16,7 @@ description:            Template Haskell code to implement default implementatio
                         for type-class functions based on which functions are
                         already implemented.  Currently extremely crude but
                         still fairly effective.
-                        
+                        .
                         When defining a type class with many functions, each
                         of which can be implemented based on arbitrary subsets
                         of the others, the standard default-implementation
@@ -27,6 +27,17 @@ description:            Template Haskell code to implement default implementatio
                         additionally be given \"suitability scores\", so that
                         when multiple possible choices could be made, the
                         library can choose the \"best\" one.
+                        .
+                        Changes in v0.0.0.2:  Nothing at all except setting 
+                        'buildable: False' under GHC 7.2.1.
+                        Technically it builds on 7.2.1, but it doesn't actually generate
+                        correct code due to http://hackage.haskell.org/trac/ghc/ticket/5410
+                        which has been patched and will almost certainly be fixed in the next
+                        GHC release.  AFAIK 7.2.1 is the only release where this bug actually
+                        caused problems.  I'm sure it could be worked around, but it's a 
+                        whole lot easier to just say "wait for 7.2.2/7.4".  If anyone 
+                        desperately needs this package under 7.2.1, let me know and I'll
+                        see what I can do.
 
 extra-source-files:     examples/*.hs
 
@@ -47,3 +58,5 @@ Library
                         containers,
                         template-haskell,
                         transformers
+  if impl(ghc == 7.2.1)
+    buildable:          False
