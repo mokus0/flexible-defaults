@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 -- |A code-generation system for complex typeclass default-implementation
 -- configurations.  There are usage examples in this package's source 
 -- distribution[1] and in the random-source package[2].
@@ -30,30 +29,9 @@ import Data.Ord
 import qualified Data.Map as M
 import qualified Data.Set as S
 import Language.Haskell.TH
+import Language.Haskell.TH.Extras
 import Language.Haskell.TH.FlexibleDefaults.DSL
 import Language.Haskell.TH.FlexibleDefaults.Solve
-
-declaredValueNames :: Dec -> [Name]
-declaredValueNames (FunD n _)    = [n]
-declaredValueNames (ValD p _ _)  = matchedNames p
-declaredValueNames _ = []
-
-matchedNames :: Pat -> [Name]
-matchedNames (VarP n)           = [n]
-matchedNames (TupP ps)          = concatMap matchedNames ps
-matchedNames (InfixP p1 _ p2)   = matchedNames p1 ++ matchedNames p2
-matchedNames (TildeP p)         = matchedNames p
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 612
-matchedNames (BangP p)          = matchedNames p
-#endif
-matchedNames (AsP n p)          = n : matchedNames p
-matchedNames (RecP _ fs)        = concatMap (matchedNames . snd) fs
-matchedNames (ListP ps)         = concatMap matchedNames ps
-matchedNames (SigP p _)         = matchedNames p
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 700
-matchedNames (ViewP _ p)        = matchedNames p
-#endif
-matchedNames _                  = []
 
 deleteKeys :: Ord k => S.Set k -> M.Map k v -> M.Map k v
 deleteKeys ks m = m M.\\ M.fromDistinctAscList [(k,()) | k <- S.toAscList ks]
@@ -61,10 +39,11 @@ deleteKeys ks m = m M.\\ M.fromDistinctAscList [(k,()) | k <- S.toAscList ks]
 -- |Given a partial list of function declarations, complete that list based on
 -- the 'Defaults' specification given.
 implementDefaults :: (Ord s, Monoid s) => Defaults s () -> [Dec] -> Q [Dec]
-implementDefaults defs decs = do
-    let prob = toProblem defs
+implementDefaults defs futzedDecs = do
+    let decs = genericalizeDecs futzedDecs
+        prob = toProblem defs
         
-        implemented = S.fromList (map nameBase (concatMap declaredValueNames decs))
+        implemented = S.fromList (map nameBase (concatMap namesBoundInDec decs))
         unimplemented = deleteKeys implemented prob
         
         solutions = chooseImplementations unimplemented

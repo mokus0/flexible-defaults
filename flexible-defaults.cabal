@@ -1,5 +1,5 @@
 name:                   flexible-defaults
-version:                0.0.0.2
+version:                0.0.0.3
 stability:              experimental
 
 cabal-version:          >= 1.6
@@ -28,21 +28,16 @@ description:            Template Haskell code to implement default implementatio
                         when multiple possible choices could be made, the
                         library can choose the \"best\" one.
                         .
+                        Changes in v0.0.0.3:  Added a hack to fix under GHC 7.2.
+                        .
                         Changes in v0.0.0.2:  Nothing at all except setting 
                         'buildable: False' under GHC 7.2.1.
-                        Technically it builds on 7.2.1, but it doesn't actually generate
-                        correct code due to http://hackage.haskell.org/trac/ghc/ticket/5410
-                        which has been patched and will almost certainly be fixed in the next
-                        GHC release.  AFAIK 7.2.1 is the only release where this bug actually
-                        caused problems.  I'm sure it could be worked around, but it's a 
-                        whole lot easier to just say "wait for 7.2.2/7.4".  If anyone 
-                        desperately needs this package under 7.2.1, let me know and I'll
-                        see what I can do.
 
 extra-source-files:     examples/*.hs
 
 tested-with:            GHC == 6.8.3, GHC == 6.10.4, GHC == 6.12.1,
-                        GHC == 6.12.3, GHC == 7.0.1, GHC == 7.0.2
+                        GHC == 6.12.3, GHC == 7.0.1, GHC == 7.0.2,
+                        GHC == 7.0.4, GHC == 7.2.1, GHC == 7.2.2
 
 source-repository head
   type:                 git
@@ -57,6 +52,5 @@ Library
   build-depends:        base >= 3 && <5,
                         containers,
                         template-haskell,
+                        th-extras,
                         transformers
-  if impl(ghc == 7.2.1)
-    buildable:          False
