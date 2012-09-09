@@ -70,13 +70,14 @@ function f (Function x) = do
 requireFunction :: String -> Defaults s ()
 requireFunction f = addImplSpecs f []
 
-#if !defined(__GLASGOW_HASKELL__) || __GLASGOW_HASKELL__ < 612
-type InlineSpec = ()
+#if !defined(__GLASGOW_HASKELL__) || __GLASGOW_HASKELL__ < 706
+data Inline = NoInline | Inline | Inlinable
+    deriving (Eq, Show)
 #endif
 
 -- |A representation of a single possible implementation of a 'Function'.  Defined
 -- using the 'implementation' function.
-newtype Implementation s a = Implementation (State (Maybe s, S.Set String, Maybe InlineSpec) a)
+newtype Implementation s a = Implementation (State (Maybe s, S.Set String, Maybe Inline) a)
     deriving (Functor, Applicative, Monad)
 
 -- |Describe a default implementation of the current function
@@ -86,14 +87,17 @@ implementation (Implementation x) = case runState x (Nothing, S.empty, Nothing) 
         fName <- ask
         ReaderT (const (addImplSpec fName (ImplSpec s deps (applyInline fName inl dec))))
 
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 612
-applyInline :: String -> Maybe InlineSpec -> Q [Dec] -> Q [Dec]
-applyInline _ Nothing       = id
-applyInline n (Just inl)    = fmap (PragmaD (InlineP (mkName n) inl) :)
-#else
-applyInline :: String -> Maybe InlineSpec -> Q [Dec] -> Q [Dec]
-applyInline _ _ = id
+applyInline :: String -> Maybe Inline -> Q [Dec] -> Q [Dec]
+#if defined(__GLASGOW_HASKELL__)
+#if __GLASGOW_HASKELL__ >= 706
+applyInline n (Just inl) = fmap (PragmaD (InlineP (mkName n) inl FunLike AllPhases) :)
+#elif __GLASGOW_HASKELL__ >= 612
+applyInline n (Just inl)
+    | inl /= Inlinable  = fmap (PragmaD (InlineP (mkName n) (InlineSpec (inl == Inline) False Nothing)) :)
 #endif
+#endif
+applyInline _ _ = id
+
 
 -- |Specify the score associated with the current implementation.  Only one 
 -- invocation of either 'score' or 'cost' may be used per implementation.
@@ -118,7 +122,7 @@ dependsOn dep = Implementation $ do
     (s, deps, inl) <- get
     put (s, S.insert dep deps, inl)
 
-setInline :: InlineSpec -> Implementation s ()
+setInline :: Inline -> Implementation s ()
 setInline inl = Implementation $ do
     (s, deps, _) <- get
     put (s, deps, Just inl)
@@ -128,15 +132,16 @@ setInline inl = Implementation $ do
 -- Haskell implementations do not support pragmas.
 inline :: Implementation s ()
 
+-- |Specify that an 'Implementation' should be annotated with an INLINEABLE pragma.
+-- Under GHC versions earlier than 7.6 this is a no-op, because those Template
+-- Haskell implementations do not support this pragma.
+inlinable :: Implementation s ()
+
 -- |Specify that an 'Implementation' should be annotated with a NOINLINE pragma.
 -- Under GHC versions earlier than 6.12 this is a no-op, because those Template
 -- Haskell implementations do not support pragmas.
 noinline :: Implementation s ()
 
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 612
-inline = setInline (InlineSpec True False Nothing)
-noinline = setInline (InlineSpec False False Nothing)
-#else
-inline = return ()
-noinline = return ()
-#endif
+inline = setInline Inline
+inlinable = setInline Inlinable
+noinline = setInline NoInline
