@@ -1,5 +1,5 @@
 name:                   flexible-defaults
-version:                0.0.1.0
+version:                0.0.1.1
 stability:              provisional
 
 cabal-version:          >= 1.6
@@ -39,7 +39,8 @@ description:            Template Haskell code to implement default implementatio
 extra-source-files:     examples/*.hs
 
 tested-with:            GHC == 6.8.3, GHC == 6.10.4, GHC == 6.12.3,
-                        GHC == 7.0.4, GHC == 7.2.1, GHC == 7.2.2
+                        GHC == 7.0.4, GHC == 7.2.1, GHC == 7.2.2,
+                        GHC == 7.4.2, GHC == 7.6.1
 
 source-repository head
   type:                 git

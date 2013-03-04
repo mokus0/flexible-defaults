@@ -70,7 +70,7 @@ function f (Function x) = do
 requireFunction :: String -> Defaults s ()
 requireFunction f = addImplSpecs f []
 
-#if !defined(__GLASGOW_HASKELL__) || __GLASGOW_HASKELL__ < 706
+#if !MIN_VERSION_template_haskell(2,8,0)
 data Inline = NoInline | Inline | Inlinable
     deriving (Eq, Show)
 #endif
@@ -88,13 +88,11 @@ implementation (Implementation x) = case runState x (Nothing, S.empty, Nothing) 
         ReaderT (const (addImplSpec fName (ImplSpec s deps (applyInline fName inl dec))))
 
 applyInline :: String -> Maybe Inline -> Q [Dec] -> Q [Dec]
-#if defined(__GLASGOW_HASKELL__)
-#if __GLASGOW_HASKELL__ >= 706
+#if MIN_VERSION_template_haskell(2,8,0)
 applyInline n (Just inl) = fmap (PragmaD (InlineP (mkName n) inl FunLike AllPhases) :)
-#elif __GLASGOW_HASKELL__ >= 612
+#elif MIN_VERSION_template_haskell(2,4,0)
 applyInline n (Just inl)
     | inl /= Inlinable  = fmap (PragmaD (InlineP (mkName n) (InlineSpec (inl == Inline) False Nothing)) :)
-#endif
 #endif
 applyInline _ _ = id
 
