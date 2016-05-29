@@ -5,6 +5,7 @@
 -- 1. <https://github.com/mokus0/flexible-defaults/tree/master/examples>
 --
 -- 2. <https://github.com/mokus0/random-fu/blob/master/random-source/src/Data/Random/Internal/TH.hs>
+{-# LANGUAGE CPP #-}
 module Language.Haskell.TH.FlexibleDefaults
     ( Defaults
     , scoreBy
@@ -70,9 +71,15 @@ withDefaults defs decQ = do
     dec <- decQ
     
     case dec of
+#if MIN_VERSION_template_haskell(2,11,0)
+        [InstanceD ol clsCxt cls decs] -> do
+            impl <- implementDefaults defs decs
+            return [InstanceD ol clsCxt cls impl]
+#else
         [InstanceD clsCxt cls decs] -> do
             impl <- implementDefaults defs decs
             return [InstanceD clsCxt cls impl]
+#endif
         
         _ -> fail "withDefaults: second parameter should be a single instance declaration"
 
