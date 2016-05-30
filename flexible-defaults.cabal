@@ -1,5 +1,5 @@
 name:                   flexible-defaults
-version:                0.0.1.1
+version:                0.0.1.2
 stability:              provisional
 
 cabal-version:          >= 1.6
@@ -27,14 +27,6 @@ description:            Template Haskell code to implement default implementatio
                         additionally be given \"suitability scores\", so that
                         when multiple possible choices could be made, the
                         library can choose the \"best\" one.
-                        .
-                        Changes in 0.0.1.0: Updated for Template Haskell changes 
-                        in GHC 7.6
-                        .
-                        Changes in v0.0.0.3:  Added a hack to fix under GHC 7.2.
-                        .
-                        Changes in v0.0.0.2:  Nothing at all except setting 
-                        'buildable: False' under GHC 7.2.1.
 
 extra-source-files:     examples/*.hs
 
