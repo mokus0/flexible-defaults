@@ -7,6 +7,7 @@ import Control.Monad.Trans.State
 import Control.Monad.Trans.Writer
 import Data.List
 import Data.Monoid
+import Data.Semigroup
 import qualified Data.Map as M
 import Data.Ord
 import qualified Data.Set as S
@@ -20,6 +21,9 @@ newtype Impls s = Impls { unImpls :: M.Map String [ImplSpec s] }
 
 instance Functor Impls where
     fmap f (Impls m) = Impls (M.map (map (fmap f)) m)
+
+instance Semigroup (Impls s) where
+    (<>) = mappend
 
 instance Monoid (Impls s) where
     mempty = Impls mempty
