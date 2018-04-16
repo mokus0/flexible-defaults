@@ -46,6 +46,7 @@ Library
                         Language.Haskell.TH.FlexibleDefaults.Solve
   build-depends:        base >= 3 && <5,
                         containers,
+                        semigroups,
                         template-haskell,
                         th-extras,
                         transformers
